@@ -43,8 +43,6 @@ public class TodoItemsController : ControllerBase
         _context.TodoItems.Add(todoItem);
         await _context.SaveChangesAsync();
 
-        // CreatedAtAction を使い、ステータスコード 201 Created を返す
-        // レスポンスの Location ヘッダーに、作成されたアイテムのURLを含める
         return CreatedAtAction(nameof(GetTodoItem), new { id = todoItem.Id }, todoItem);
     }
 }
