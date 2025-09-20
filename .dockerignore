@@ -1,0 +1,21 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+Properties/launchSettings.json
+
+# VS Code
+.vscode/
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+
+# Other
+README.md

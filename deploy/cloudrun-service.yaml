@@ -1,0 +1,47 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: example-dotnet
+spec:
+  template:
+    metadata:
+      annotations:
+        run.googleapis.com/container-dependencies: '{"app":["collector"]}'
+    spec:
+      containers:
+      - name: app
+        image: __APP_IMAGE__
+        env:
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://localhost:4317"
+        - name: OTEL_SERVICE_NAME
+          value: "example-dotnet"
+        ports:
+        - name: http1
+          containerPort: 8080
+      - image: "us-docker.pkg.dev/cloud-ops-agents-artifacts/google-cloud-opentelemetry-collector/otelcol-google:0.131.0"
+        args:
+        - --config=/etc/otelcol-google/config.yaml
+        name: collector
+        startupProbe:
+          httpGet:
+            path: /
+            port: 13133
+          timeoutSeconds: 30
+          periodSeconds: 30
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 13133
+          timeoutSeconds: 30
+          periodSeconds: 30
+        volumeMounts:
+        - mountPath: /etc/otelcol-google/
+          name: config
+      volumes:
+      - name: config
+        secret:
+          items:
+          - key: latest
+            path: config.yaml
+          secretName: 'otel-collector-config'
