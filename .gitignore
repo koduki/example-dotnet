@@ -1,0 +1,43 @@
+# .gitignore for .NET projects
+# Build results
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# VS Code settings
+.vscode/
+
+# Dotnet-specific
+*.vspscc
+*.vssscc
+*.dbmdl
+*.pdb
+*.cache
+*.log
+*.vs/
+
+# Others
+TestResults/
+*.DS_Store
+*.swp
+*.tmp
+*.bak
+*.ncrunch*
+_ReSharper*/
+
+# NuGet packages
+*.nupkg
+# Uncomment if you have NuGet package restore enabled
+# packages/
+
+# Azure build
+*.azure-pipelines*
+
+# Rider
+.idea/
+*.sln.iml
