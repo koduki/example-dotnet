@@ -14,7 +14,24 @@ builder.Services.AddOpenTelemetry()
     .WithTracing(tracing =>
     {
         tracing
-            .AddAspNetCoreInstrumentation()
+            .AddAspNetCoreInstrumentation(options =>
+            {
+                options.EnrichWithHttpRequest = (activity, httpRequest) =>
+                {
+                    foreach (var header in httpRequest.Headers)
+                    {
+                        activity.SetTag($"http.request.header.{header.Key.ToLower()}", string.Join(", ", header.Value.ToArray()));
+                    }
+                };
+                options.EnrichWithHttpResponse = (activity, httpResponse) =>
+                {
+                    foreach (var header in httpResponse.Headers)
+                    {
+                        activity.SetTag($"http.response.header.{header.Key.ToLower()}", string.Join(", ", header.Value.ToArray()));
+                    }
+                };
+                options.RecordException = true;
+            })
             .AddEntityFrameworkCoreInstrumentation(options =>
             {
                 options.SetDbStatementForText = true;
