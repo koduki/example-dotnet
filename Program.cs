@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using TodoApi.Models;
@@ -36,14 +37,31 @@ builder.Services.AddOpenTelemetry()
             {
                 options.SetDbStatementForText = true;
             })
-            .AddOtlpExporter(); 
+            .AddOtlpExporter();
 
         // 開発環境でのみ、コンソールにもトレースを出力する
         if (builder.Environment.IsDevelopment())
         {
             tracing.AddConsoleExporter();
         }
+    })
+    .WithMetrics(metrics =>
+    {
+        metrics
+            .AddAspNetCoreInstrumentation() 
+            .AddHttpClientInstrumentation()
+            .AddProcessInstrumentation()  
+            .AddRuntimeInstrumentation();
+
+        metrics.AddOtlpExporter();
+
+        // 開発環境でのみ、コンソールにもメトリクスを出力する
+        if (builder.Environment.IsDevelopment())
+        {
+            metrics.AddConsoleExporter();
+        }
     });
+
 builder.Services.AddDbContext<TodoContext>(opt =>
     opt.UseInMemoryDatabase("TodoList"));
 

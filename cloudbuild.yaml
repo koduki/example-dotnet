@@ -4,37 +4,43 @@ substitutions:
   _IMAGE_NAME: example-dotnet
 
 steps:
-- id: docker-build
-  name: gcr.io/cloud-builders/docker
-  args:
-    - build
-    - -t
-    - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE_NAME}
-    - .
+  - id: docker-build
+    name: gcr.io/cloud-builders/docker
+    args: ['build', '-t', '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE_NAME}:latest', '.']
 
-- id: docker-push
-  name: gcr.io/cloud-builders/docker
-  args:
-    - push
-    - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE_NAME}
-    
-# イメージ名を組み立ててcloudrun-service.yamlを置換
-- id: map-image-name
-  name: 'gcr.io/cloud-builders/gcloud'
-  entrypoint: 'bash'
-  args:
-    - '-c'
-    - "sed 's|__APP_IMAGE__|${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE_NAME}|g' deploy/cloudrun-service.yaml > cloudrun-service.mapped.yaml;cat cloudrun-service.mapped.yaml"
+  - id: docker-push
+    name: gcr.io/cloud-builders/docker
+    args: ['push', '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE_NAME}:latest']
 
-- id: deploy
-  name: gcr.io/google.com/cloudsdktool/cloud-sdk
-  entrypoint: gcloud
-  args:
-    - run
-    - services
-    - replace
-    - cloudrun-service.mapped.yaml
-    - --region=${_REGION}
-    - --project=$PROJECT_ID
+  # Get the digest of the image we just pushed
+  - id: get-digest
+    name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud container images describe ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE_NAME}:latest --format='get(image_summary.digest)' > /workspace/digest.txt
 
+  # Substitute the image name WITH the digest in the service yaml
+  - id: map-image-name-with-digest
+    name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        sed "s|__APP_IMAGE__|${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE_NAME}@$(cat /workspace/digest.txt)|g" deploy/cloudrun-service.yaml > cloudrun-service.mapped.yaml
+        cat cloudrun-service.mapped.yaml
 
+  - id: deploy
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'services'
+      - 'replace'
+      - 'cloudrun-service.mapped.yaml'
+      - '--region=${_REGION}'
+      - '--project=$PROJECT_ID'
+
+images:
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE_NAME}:latest'
