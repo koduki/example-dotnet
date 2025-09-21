@@ -2,6 +2,10 @@ import http from 'k6/http';
 import { sleep } from 'k6';
 
 export default function () {
-  http.get('https://example-dotnet-367762831588.asia-northeast1.run.app/api/TodoItems');
+  const targetUrl = __ENV.TARGET_URL;
+  if (!targetUrl) {
+    throw new Error('TARGET_URL environment variable is not set.');
+  }
+  http.get(`${targetUrl}/api/TodoItems`);
   sleep(1);
 }
